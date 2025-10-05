@@ -70,20 +70,42 @@ const subscriptionSchema = new mongoose.Schema(
 
 
 subscriptionSchema.pre('save', function(next) {
-    if(!this.renewalDate) {
-        const renewalPeriods = {
-            daily: 1,
-            weekly: 7,
-            monthly: 30,
-            yearly: 365
-        };
-        this.renewalDate = new Date(this.startDate);
-        this.renewalDate.setDate(this.startDate.getTime() + renewalPeriods[this.frequency]);
+    // 1. Calculate renewalDate only if it hasn't been set
+    if (!this.renewalDate && this.startDate && this.frequency) {
+        // Create a new Date object based on startDate to manipulate it
+        const newRenewalDate = new Date(this.startDate);
+
+        switch (this.frequency) {
+            case 'daily':
+                // Add 1 day
+                newRenewalDate.setDate(newRenewalDate.getDate() + 1);
+                break;
+            case 'weekly':
+                // Add 7 days
+                newRenewalDate.setDate(newRenewalDate.getDate() + 7);
+                break;
+            case 'monthly':
+                // CORRECT WAY: Use setMonth() to handle different month lengths (30, 31, 28/29)
+                newRenewalDate.setMonth(newRenewalDate.getMonth() + 1);
+                break;
+            case 'yearly':
+                // CORRECT WAY: Use setFullYear()
+                newRenewalDate.setFullYear(newRenewalDate.getFullYear() + 1);
+                break;
+            default:
+                // Handle cases where frequency might be undefined or invalid
+                break;
+        }
+
+        this.renewalDate = newRenewalDate;
     }
 
-    if(this.renewalDate < new Date()) {
+    // 2. Update status if renewalDate is in the past
+    // This check is now outside the renewalDate calculation block.
+    if (this.renewalDate && this.renewalDate < new Date()) {
         this.status = 'expired';
     }
+
     next();
 });
 
