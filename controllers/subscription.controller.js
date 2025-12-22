@@ -1,3 +1,5 @@
+import { SERVER_URL } from "../config/env.js";
+import { workflowClient } from "../config/upstash.js";
 import Subscription from "../models/subscription.model.js";
 
 export const createSubscription = async (req, res, next) => {
@@ -6,8 +8,20 @@ export const createSubscription = async (req, res, next) => {
             ...req.body,
             user: req.user._id
         })
+
+        const { workflowRunId } = await workflowClient.trigger({
+            url : `${SERVER_URL}/api/v1/workflows/subscription/reminder`,
+            body: {
+                subscriptionId: subscription._id,
+            },
+            headers: {
+                'content-type':'application/json',
+            },
+            retries:0,
+        })
+
         res.status(201).json({
-            success: true, data: subscription
+            success: true, data: {subscription, workflowRunId}
         });
     } catch (error) {
         next(error);
@@ -16,12 +30,13 @@ export const createSubscription = async (req, res, next) => {
 
 export const getUserSubscription = async (req, res, next) => {
     try {
-        if(req.user.id !== req.params.id) {
-            const error = new Error("u r not the owner");
-            error.statusCode = 401;
-            throw error;
-        }
-        const subscriptions = await Subscription.find({ user: req.params.id });
+        // if(req.user.id !== req.params.id) {
+        //     const error = new Error("u r not the owner");
+        //     error.statusCode = 401;
+        //     throw error;
+        // }
+        
+        const subscriptions = await Subscription.find({ user: req.user._id }).populate('user', 'name email');
         res.status(200).json({
             success: true,
             data: subscriptions

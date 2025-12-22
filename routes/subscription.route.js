@@ -26,15 +26,15 @@ subscriptionRouter.put('/:id', (req, res) => {
     });
 });
 
-subscriptionRouter.get('/user/:id', authorize, getUserSubscription);
+subscriptionRouter.get('/user/subscriptions', authorize, getUserSubscription);
 
 subscriptionRouter.get('/:id/cancel', (req, res) => {
     res.send({
-        title: 'Cacel Subscriptions'
+        title: 'Cancel Subscriptions'
     });
 });
 
-subscriptionRouter.get('/upcoming-renewals', (req, res) => {
+subscriptionRouter.get('/upcoming-renwwewals', (req, res) => {
     res.send({
         title: 'bvhjkhbnjhbn'
     });
